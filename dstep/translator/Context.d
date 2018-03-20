@@ -21,6 +21,7 @@ import dstep.translator.Output;
 import dstep.translator.Translator;
 import dstep.translator.TypedefIndex;
 import dstep.translator.HeaderIndex;
+import dstep.translator.GlobalContext;
 
 class Context
 {
@@ -43,7 +44,9 @@ class Context
 
     const string source;
 
-    public this(TranslationUnit translUnit, Options options, Translator translator = null)
+    public GlobalContext global;
+
+    public this(TranslationUnit translUnit, Options options)
     {
         this.translUnit = translUnit;
         macroIndex = new MacroIndex(translUnit);
@@ -65,10 +68,7 @@ class Context
 
         typedefIndex_ = new TypedefIndex(translUnit, options.isWantedCursorForTypedefs);
 
-        if (translator !is null)
-            translator_ = translator;
-        else
-            translator_ = new Translator(translUnit, options);
+        translator_ = new Translator(this);
 
         globalScope_ = new Output();
         collectGlobalNames(translUnit, typeNames_, constNames_);

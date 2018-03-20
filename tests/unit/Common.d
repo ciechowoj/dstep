@@ -23,6 +23,7 @@ import clang.Diagnostic;
 import dstep.driver.Application;
 import dstep.translator.CommentIndex;
 import dstep.translator.Context;
+import dstep.translator.GlobalContext;
 import dstep.translator.IncludeHandler;
 import dstep.translator.MacroDefinition;
 import dstep.translator.MacroParser;
@@ -376,8 +377,10 @@ void assertCollectsTypeNames(string[] expected, string source, string file = __F
 
 string translate(TranslationUnit translationUnit, Options options)
 {
-    auto translator = new Translator(translationUnit, options);
-    return translator.translateToString();
+    auto context = new Context(translationUnit, options);
+    auto globalContext = new GlobalContext([context], options);
+    context.global = globalContext;
+    return context.translator.translateToString();
 }
 
 class TranslateAssertError : AssertError

@@ -59,15 +59,15 @@ class Translator
     TypedMacroDefinition[string] typedMacroDefinitions;
     Context context;
 
-    this (TranslationUnit translationUnit, Options options = Options.init)
+    this (Context context)
     {
-        this.inputFilename = translationUnit.spelling;
-        this.translationUnit = translationUnit;
-        outputFile = options.outputFile;
-        language = options.language;
+        this.context = context;
 
-        inputFile = translationUnit.file(inputFilename);
-        context = new Context(translationUnit, options, this);
+        this.translationUnit = context.translUnit;
+        this.outputFile = context.options.outputFile;
+        this.inputFilename = context.translUnit.spelling;
+        this.language = context.options.language;
+        this.inputFile = this.translationUnit.file(inputFilename);
     }
 
     void translate ()

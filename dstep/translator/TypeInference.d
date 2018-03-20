@@ -7,6 +7,7 @@
 module dstep.translator.TypeInference;
 
 import std.container.dlist;
+import std.parallelism;
 import std.range;
 import std.traits;
 import std.variant;
@@ -239,7 +240,6 @@ InferredType inferExpressionType(Expression expression)
 
 class InferenceContext
 {
-    Cursor[string] globalTypes;
     DList!TypedMacroDefinition queue;
     TypedMacroDefinition[string] definitions;
 }
@@ -259,7 +259,26 @@ class TypedMacroDefinition
     }
 }
 
-TypedMacroDefinition[string] inferMacroSignatures(Context context)
+MacroDefinition[] parseMacroDefinitions(Context[] contexts, TaskPool taskPool)
+{
+    MacroDefinition[][] macroDefinitionArrays = new MacroDefinition[][contexts.length];
+
+    foreach (index, ref macroDefinitions; translationUnits.parallel(1))
+    {
+        macroDefinitions = parseMacroDefinitions(
+            context.translUnit.cursor.children(true),
+            context.typeNames());
+    }
+
+
+
+
+
+
+    return null;
+}
+
+TypedMacroDefinition[string] inferMacroSignatures(Context[] contexts, TaskPool taskPool)
 {
     import std.array;
     import std.algorithm;
@@ -270,9 +289,10 @@ TypedMacroDefinition[string] inferMacroSignatures(Context context)
         context.typeNames());
 
     auto inferenceContext = new InferenceContext();
-    inferenceContext.globalTypes = context.typeNames();
+
     inferenceContext.queue = DList!TypedMacroDefinition(
         macroDefinitions.map!(TypedMacroDefinition.fromDefinition));
+
     inferenceContext.definitions = assocArray(
         zip(
             inferenceContext.queue[]

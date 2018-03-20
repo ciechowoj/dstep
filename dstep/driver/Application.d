@@ -24,6 +24,8 @@ import dstep.translator.Options;
 import dstep.core.Exceptions;
 import dstep.translator.Options;
 import dstep.translator.Translator;
+import dstep.translator.Context;
+import dstep.translator.GlobalContext;
 
 class Application
 {
@@ -51,20 +53,17 @@ class Application
 
         enforceTranslationUnitsCompiled(translationUnits);
 
-        auto inputFiles = config.inputFiles;
-        auto outputFiles = makeOutputFiles(config);
+        auto contexts = makeContexts(translationUnits, config);
+        auto globalContext = new GlobalContext(contexts, this.config.toOptions(), taskPool);
 
-        foreach (tuple; zip(inputFiles, outputFiles, translationUnits).parallel(1))
+        foreach (context; contexts.parallel(1))
         {
-            string outputDirectory = Path.dirName(tuple[1]);
+            string outputDirectory = Path.dirName(context.options.outputFile);
 
             if (!exists(outputDirectory))
                 mkdirRecurse(outputDirectory);
 
-            Options options = this.config.toOptions(tuple[0], tuple[1]);
-
-            auto translator = new Translator(tuple[2], options);
-            translator.translate;
+            context.translator.translate();
         }
 
         taskPool.finish(true);
@@ -166,5 +165,24 @@ class Application
         }
 
         return translationUnits;
+    }
+
+    static Context[] makeContexts(TranslationUnit[] translationUnits, Configuration config)
+    {
+        import std.parallelism;
+
+        auto inputFiles = config.inputFiles;
+        auto outputFiles = makeOutputFiles(config);
+
+        auto contexts = new Context[config.inputFiles.length];
+
+        foreach (index, ref context; contexts.parallel(1))
+        {
+            context = new Context(
+                translationUnits[index],
+                config.toOptions(inputFiles[index], inputFiles[index]));
+        }
+
+        return contexts;
     }
 }
